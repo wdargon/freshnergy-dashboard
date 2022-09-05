@@ -1,0 +1,91 @@
+{
+  "project_info": {
+    "project_number": "546202939614",
+    "firebase_url": "https://freshairmonitor.firebaseio.com",
+    "project_id": "freshairmonitor",
+    "storage_bucket": "freshairmonitor.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:546202939614:android:a34c34f4961024cd51124f",
+        "android_client_info": {
+          "package_name": "com.aiknowhow.freshairmonitor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "546202939614-qh97o3jmsnh8fc1q9rsckihv4m9rsmf8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aiknowhow.freshairmonitor",
+            "certificate_hash": "3eaa436ce6dd284cc422552248c166f15999d92a"
+          }
+        },
+        {
+          "client_id": "546202939614-18gl6fvml1hbvk99p8te39186jod6skg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDBw5xtHn8hkXhrug0jSIq0kruBFqyFXo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "546202939614-18gl6fvml1hbvk99p8te39186jod6skg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "546202939614-3gnumie2vn34jhr2hijlldrfi65rrj18.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aiknowhow.freshairmonitor"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:546202939614:android:78b09cbbcc4da51651124f",
+        "android_client_info": {
+          "package_name": "com.aiknowhow.freshnergy_dashboard"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "546202939614-18gl6fvml1hbvk99p8te39186jod6skg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDBw5xtHn8hkXhrug0jSIq0kruBFqyFXo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "546202939614-18gl6fvml1hbvk99p8te39186jod6skg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "546202939614-3gnumie2vn34jhr2hijlldrfi65rrj18.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aiknowhow.freshairmonitor"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
