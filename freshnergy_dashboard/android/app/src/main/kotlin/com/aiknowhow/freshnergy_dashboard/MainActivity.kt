@@ -1,4 +1,4 @@
-package com.example.freshnergy_dashboard
+package com.aiknowhow.freshnergy_dashboard
 
 import io.flutter.embedding.android.FlutterActivity
 
