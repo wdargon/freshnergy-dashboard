@@ -1,6 +1,8 @@
 {
   "main": {
     "sample": "Example",
-    "save": "Save"
+    "save": "Save",
+    "temperature": "Temperature",
+    "humi": "Humidity"
   }
 }

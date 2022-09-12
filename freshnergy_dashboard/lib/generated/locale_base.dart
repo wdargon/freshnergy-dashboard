@@ -35,5 +35,7 @@ class Localemain {
 
   String get sample => _data["sample"]!;
   String get save => _data["save"]!;
+  String get temperature => _data["temperature"]!;
+  String get humi => _data["humi"]!;
 }
 
