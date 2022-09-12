@@ -28,3 +28,11 @@ const appBarHeight = 66.0;
 Color white80 = Color(0xFFFFFFFF);
 Color backgroundCardOffFilter = Color(0x88FFFFFF);
 Color backgroundCardOff = Color(0xCCEEFFFF);
+
+const CHART_PM = "PM2.5";
+const CHART_CO2 = "CO2";
+const CHART_TEMP = "TEMP";
+const CHART_HUMI = "HUMI";
+
+const CO2_String = 'CO₂';
+const PM_String = 'PM2.5';

@@ -1,12 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:clay_containers/clay_containers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:freshnergy_dashboard/data/dataResult.dart';
+import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
+import 'const.dart';
 import 'data/dataClass.dart';
 import 'generated/locale_base.dart';
 
@@ -30,21 +32,15 @@ class _DataScreenState extends State<DataScreen> {
   var dev3Color = Colors.indigo.shade300;
   var dev4Color = Colors.pink.shade300;
   late DatabaseReference _firebaseData;
-  late StreamSubscription<DatabaseEvent> _device1Subscription;
-  late StreamSubscription<DatabaseEvent> _device2Subscription;
-  late StreamSubscription<DatabaseEvent> _device3Subscription;
-  late StreamSubscription<DatabaseEvent> _device4Subscription;
-  FirebaseException? _dev1Error;
-  FirebaseException? _dev2Error;
-  FirebaseException? _dev3Error;
-  FirebaseException? _dev4Error;
-  deviceData? _dev1Data;
-  deviceData? _dev2Data;
-  deviceData? _dev3Data;
-  deviceData? _dev4Data;
+  DataResult? device1;
+  DataResult? device2;
+  DataResult? device3;
+  DataResult? device4;
 
   var mainSizeFactor = 0.96;
   var sensorTitleFactor = 0.10;
+  late StreamController<bool> _sub1;
+  var indexChart = 0;
 
   @override
   void didChangeDependencies() async {
@@ -63,20 +59,24 @@ class _DataScreenState extends State<DataScreen> {
   @override
   void dispose() {
     super.dispose();
-    _device1Subscription.cancel();
-    _device2Subscription.cancel();
-    _device3Subscription.cancel();
-    _device4Subscription.cancel();
+    device1?.cancelSub();
+    device2?.cancelSub();
+    device3?.cancelSub();
+    device4?.cancelSub();
   }
 
   initPageData() async {
-    const cid = '10521C838958';
-    _dev1Data = await getDeviceData(cid);
-    if (_dev1Data != null) await subscripDevice1(cid);
+    device1 = await getDeviceData('10521C838958');
+    await device1?.getChartDataDay();
+    device2 = await getDeviceData('10521C838870');
+    await device2?.getChartDataDay();
+    device3 = await getDeviceData('246F285EE1FC');
+    await device3?.getChartDataDay();
+    device4 = await getDeviceData('10521C838988');
+    await device4?.getChartDataDay();
   }
 
-  Future<deviceData?> getDeviceData(String cid) async {
-    deviceData? d = deviceData.init();
+  Future<DataResult?> getDeviceData(String cid) async {
     var event = await FirebaseDatabase.instance
         .ref('user')
         .orderByChild('cid')
@@ -84,55 +84,250 @@ class _DataScreenState extends State<DataScreen> {
         .once();
     if (event.snapshot.value != null) {
       var mapSnap = Map<dynamic, dynamic>.from(event.snapshot.value as dynamic);
-      print(event.snapshot.value);
-      print(mapSnap.entries.first.value);
       var map =
           Map<dynamic, dynamic>.from(mapSnap.entries.first.value as dynamic);
-      var a = map.entries.first;
-      d.deviceName = map['name'];
-      d.deviceModel = map['model'];
-      d.room = map['room'] ?? '';
-      d.version = map['version'] ?? '0.00';
-      d.wifiSSID = map['wifi_ssid'] ?? '';
-      if (map['location'] != null) {
-        d.location = locationData.fromMap(map['location']);
-      }
-      return d;
+      return DataResult.deviceSelect(
+          cid,
+          map['name'],
+          map['model'],
+          map['version'] ?? '0.00',
+          true,
+          map['room'] ?? '',
+          map['wifi_ssid'] ?? '',
+          refreshScreen);
     } else {
       return null;
     }
   }
 
-  subscripDevice1(String cid) async {
-    var _dev = FirebaseDatabase.instance.ref('data/$cid/realtime');
-    await _dev.get().then((value) {
-      print(value.value);
-    });
+  refreshScreen() {
+    setState(() {});
+  }
 
-    _device1Subscription = _dev.onValue.listen(
-      (DatabaseEvent event) {
-        setState(() {
-          _dev1Error = null;
-          var values = event.snapshot.value;
-          var map = Map<dynamic, dynamic>.from(event.snapshot.value as dynamic);
-          var tmpDev = deviceData.fromMap(map);
-          tmpDev.wifiSSID = _dev1Data!.wifiSSID;
-          tmpDev.location = _dev1Data!.location;
-          tmpDev.cid = cid;
-          tmpDev.room = _dev1Data!.room;
-          tmpDev.deviceModel = _dev1Data!.deviceModel;
-          tmpDev.deviceName = _dev1Data!.deviceName;
-          tmpDev.version = _dev1Data!.version;
-          _dev1Data = tmpDev;
-          // print(dev!.sensor.temp);
-        });
+  ChartSeries getChartDataCo2(DataResult dev, Color c) {
+    return LineSeries<deviceData, DateTime>(
+      dataSource: indexChart == 0 ? dev.chartDataDay : dev.chartDataWeek,
+      name: CO2_String,
+      width: 2,
+      xValueMapper: (deviceData device, _) => device.dateTime,
+      yValueMapper: (deviceData device, _) => device.sensor.co2,
+      enableTooltip: true,
+      color: c,
+    );
+  }
+
+  ChartSeries getChartDataTemp(DataResult dev, Color c) {
+    return LineSeries<deviceData, DateTime>(
+      dataSource: indexChart == 0 ? dev.chartDataDay : dev.chartDataWeek,
+      name: loc.main.temperature,
+      width: 2,
+      xValueMapper: (deviceData device, _) => device.dateTime,
+      yValueMapper: (deviceData device, _) => device.sensor.temp,
+      enableTooltip: true,
+      color: c,
+    );
+  }
+
+  ChartSeries getChartDataHumi(DataResult dev, Color c) {
+    return LineSeries<deviceData, DateTime>(
+      dataSource: indexChart == 0 ? dev.chartDataDay : dev.chartDataWeek,
+      name: loc.main.humi,
+      width: 2,
+      xValueMapper: (deviceData device, _) => device.dateTime,
+      yValueMapper: (deviceData device, _) => device.sensor.humi,
+      enableTooltip: true,
+      color: c,
+    );
+  }
+
+  ChartSeries getChartDataPM(DataResult dev, Color c) {
+    return LineSeries<deviceData, DateTime>(
+      dataSource: indexChart == 0 ? dev.chartDataDay : dev.chartDataWeek,
+      name: PM_String,
+      width: 2,
+      xValueMapper: (deviceData device, _) => device.dateTime,
+      yValueMapper: (deviceData device, _) => device.sensor.pm2_5,
+      enableTooltip: true,
+      color: c,
+    );
+  }
+
+  Widget co2_chart(var width, var height, var ts, var tsTime) {
+    var cData = List<ChartSeries>.empty(growable: true);
+    if (device1 != null) {
+      cData.add(getChartDataCo2(device1!, dev1Color));
+    }
+    if (device2 != null) {
+      cData.add(getChartDataCo2(device2!, dev2Color));
+    }
+    if (device3 != null) {
+      cData.add(getChartDataCo2(device3!, dev3Color));
+    }
+    if (device4 != null) {
+      cData.add(getChartDataCo2(device4!, dev4Color));
+    }
+    return chartShow(
+        width, height, '$CO2_String (PPM)', cData, false, ts, tsTime);
+  }
+
+  Widget temp_chart(var width, var height, var ts, var tsTime) {
+    var cData = List<ChartSeries>.empty(growable: true);
+    if (device1 != null) {
+      cData.add(getChartDataTemp(device1!, dev1Color));
+    }
+    if (device2 != null) {
+      cData.add(getChartDataTemp(device2!, dev2Color));
+    }
+    if (device3 != null) {
+      cData.add(getChartDataTemp(device3!, dev3Color));
+    }
+    if (device4 != null) {
+      cData.add(getChartDataTemp(device4!, dev4Color));
+    }
+    return chartShow(width, height, '${loc.main.temperature} (°C)', cData,
+        false, ts, tsTime);
+  }
+
+  Widget humi_chart(var width, var height, var ts, var tsTime) {
+    var cData = List<ChartSeries>.empty(growable: true);
+    if (device1 != null) {
+      cData.add(getChartDataHumi(device1!, dev1Color));
+    }
+    if (device2 != null) {
+      cData.add(getChartDataHumi(device2!, dev2Color));
+    }
+    if (device3 != null) {
+      cData.add(getChartDataHumi(device3!, dev3Color));
+    }
+    if (device4 != null) {
+      cData.add(getChartDataHumi(device4!, dev4Color));
+    }
+    return chartShow(
+        width, height, '${loc.main.humi} (%)', cData, false, ts, tsTime);
+  }
+
+  Widget pm_chart(var width, var height, var ts, var tsTime) {
+    var cData = List<ChartSeries>.empty(growable: true);
+    if (device1 != null) {
+      cData.add(getChartDataHumi(device1!, dev1Color));
+    }
+    if (device2 != null) {
+      cData.add(getChartDataHumi(device2!, dev2Color));
+    }
+    if (device3 != null) {
+      cData.add(getChartDataHumi(device3!, dev3Color));
+    }
+    if (device4 != null) {
+      cData.add(getChartDataHumi(device4!, dev4Color));
+    }
+    return chartShow(
+        width, height, '$PM_String (ug/m³)', cData, false, ts, tsTime);
+  }
+
+  Widget getChart(String type) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.biggest.width;
+        final height = constraints.biggest.height;
+        var ts = TextStyle(
+          fontSize: width / 36,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        );
+        var tsTime = TextStyle(
+          fontSize: width / 40,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        );
+        switch (type) {
+          case CHART_TEMP:
+            return temp_chart(width, height, ts, tsTime);
+          case CHART_HUMI:
+            return humi_chart(width, height, ts, tsTime);
+          case CHART_CO2:
+            return co2_chart(width, height, ts, tsTime);
+          case CHART_PM:
+            return pm_chart(width, height, ts, tsTime);
+          default : return Container();
+        }
       },
-      onError: (Object o) {
-        final error = o as FirebaseException;
-        setState(() {
-          _dev1Error = error;
-        });
-      },
+    );
+  }
+
+  Widget showTempHumiChart(){
+    return SizedBox(
+      child: Column(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: getChart(CHART_TEMP)),
+              Expanded(child: getChart(CHART_HUMI)),
+            ],
+      ),
+    );
+  }
+
+  Widget chartShow(var w, var h, var header, var chartData, var isLegend,
+      var tsTitle, var tsTime) {
+    return Container(
+      height: h,
+      width: w,
+      // color: Colors.white,
+      child: SfCartesianChart(
+        title: ChartTitle(text: header, textStyle: tsTitle),
+        margin: EdgeInsets.only(
+            right: h / 10, top: h / 30, bottom: h / 30, left: h / 30),
+        // backgroundColor: Colors.white,
+        legend: isLegend
+            ? Legend(isVisible: true, position: LegendPosition.auto)
+            : Legend(isVisible: false),
+        tooltipBehavior: TooltipBehavior(
+          enable: true,
+          opacity: 0.5,
+          // header: tooltopHeader,
+          canShowMarker: false,
+        ),
+        series: chartData,
+        // plotAreaBackgroundColor: Colors.amber,
+        plotAreaBorderColor: Colors.transparent,
+        primaryXAxis: DateTimeAxis(
+          majorGridLines: const MajorGridLines(
+            width: 0,
+            color: Colors.white,
+          ),
+          axisLine: const AxisLine(
+            color: Colors.white,
+            width: 1,
+          ),
+          labelStyle: TextStyle(
+              color: Colors.white,
+              fontSize: w / 44,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w500),
+          title: AxisTitle(
+              text: indexChart == 0 ? 'Hours' : 'Date', textStyle: tsTime),
+          interval: indexChart == 0 ? 2 : 1,
+          intervalType: indexChart == 0
+              ? DateTimeIntervalType.hours
+              : DateTimeIntervalType.days,
+          dateFormat: indexChart == 0 ? DateFormat.H() : DateFormat.d(),
+        ),
+        primaryYAxis: NumericAxis(
+          majorGridLines: const MajorGridLines(
+            width: 1,
+            color: Colors.white,
+          ),
+          axisLine: const AxisLine(
+            color: Colors.white,
+            width: 1,
+          ),
+          labelStyle: TextStyle(
+              color: Colors.white,
+              fontSize: w / 44,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w500),
+        ),
+      ),
     );
   }
 
@@ -141,7 +336,7 @@ class _DataScreenState extends State<DataScreen> {
       alignment: Alignment.topRight,
       child: Container(
         height: h * sensorTitleFactor,
-        width: w * 0.01,
+        width: w * 0.02,
         color: c,
       ),
     );
@@ -149,15 +344,15 @@ class _DataScreenState extends State<DataScreen> {
 
   Widget showDeviceInfo(deviceData dev, var h, var w) {
     var ts = TextStyle(
-      fontSize: h / 22,
+      fontSize: h / 24,
       color: textColor,
     );
     var tsTitle = TextStyle(
-      fontSize: h / 28,
+      fontSize: h / 30,
       color: textColor,
     );
     var tsValue = TextStyle(
-      fontSize: h / 32,
+      fontSize: h / 36,
       color: textColor,
     );
     return SizedBox(
@@ -352,7 +547,7 @@ class _DataScreenState extends State<DataScreen> {
         ),
       ],
     );
-    return gaugeShow(dev, h, w, styleTitle, styleValue, gauge, "PM2.5",
+    return gaugeShow(dev, h, w, styleTitle, styleValue, gauge, PM_String,
         "${dev.sensor.pm2_5} ug/m³");
   }
 
@@ -405,7 +600,7 @@ class _DataScreenState extends State<DataScreen> {
         ),
       ],
     );
-    return gaugeShow(dev, h, w, styleTitle, styleValue, gauge, "CO₂",
+    return gaugeShow(dev, h, w, styleTitle, styleValue, gauge, CO2_String,
         "${dev.sensor.co2} PPM");
   }
 
@@ -443,6 +638,9 @@ class _DataScreenState extends State<DataScreen> {
                   Text(
                     value,
                     style: styleValue,
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
                   ),
                 ],
               ),
@@ -453,7 +651,7 @@ class _DataScreenState extends State<DataScreen> {
     );
   }
 
-  Widget sensorShow(deviceData? data, Color c) {
+  Widget sensorShow(DataResult? data, Color c) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.biggest.width;
@@ -468,7 +666,7 @@ class _DataScreenState extends State<DataScreen> {
               ? Stack(
                   children: [
                     colorIndicator(c, height, width),
-                    showDeviceInfo(data, height, width),
+                    showDeviceInfo(data.sensorData, height, width),
                   ],
                 )
               : Center(
@@ -500,53 +698,6 @@ class _DataScreenState extends State<DataScreen> {
               ),
               child: c,
             ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget cardSensor(Widget c, int position) {
-    late var al;
-    switch (position) {
-      case 1:
-        al = Alignment.topLeft;
-        break;
-      case 2:
-        al = Alignment.topRight;
-        break;
-      case 3:
-        al = Alignment.bottomLeft;
-        break;
-      case 4:
-        al = Alignment.bottomRight;
-        break;
-      default:
-        al = Alignment.topCenter;
-        break;
-    }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.biggest.width;
-        final height = constraints.biggest.height;
-        return Container(
-          height: height,
-          width: width,
-          child: Stack(
-            children: [
-              Align(
-                alignment: al,
-                child: Container(
-                  height: height * mainSizeFactor,
-                  width: width * mainSizeFactor,
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    // borderRadius: BorderRadius.all(Radius.circular(height * 0.1)),
-                  ),
-                  child: c,
-                ),
-              ),
-            ],
           ),
         );
       },
@@ -593,17 +744,13 @@ class _DataScreenState extends State<DataScreen> {
                               mainAxisSize: MainAxisSize.max,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Expanded(
-                                    child: sensorShow(_dev1Data, dev1Color)),
+                                Expanded(child: sensorShow(device1, dev1Color)),
                                 SizedBox(width: sw - (sw * mainSizeFactor)),
-                                Expanded(
-                                    child: sensorShow(_dev2Data, dev2Color)),
+                                Expanded(child: sensorShow(device2, dev2Color)),
                                 SizedBox(width: sw - (sw * mainSizeFactor)),
-                                Expanded(
-                                    child: sensorShow(_dev3Data, dev3Color)),
+                                Expanded(child: sensorShow(device3, dev3Color)),
                                 SizedBox(width: sw - (sw * mainSizeFactor)),
-                                Expanded(
-                                    child: sensorShow(_dev4Data, dev4Color)),
+                                Expanded(child: sensorShow(device4, dev4Color)),
                               ],
                             ),
                           ),
@@ -611,7 +758,7 @@ class _DataScreenState extends State<DataScreen> {
                       },
                     ),
                   ),
-                  Expanded(child: cardWidget(Container())),
+                  Expanded(child: cardWidget(showTempHumiChart())),
                 ],
               ),
             ),
@@ -620,8 +767,8 @@ class _DataScreenState extends State<DataScreen> {
                 mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: cardWidget(Container())),
-                  Expanded(child: cardWidget(Container())),
+                  Expanded(child: cardWidget(getChart(CHART_CO2))),
+                  Expanded(child: cardWidget(getChart(CHART_PM))),
                 ],
               ),
             ),
