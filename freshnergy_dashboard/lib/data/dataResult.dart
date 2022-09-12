@@ -18,17 +18,20 @@ class DataResult {
   late locationData location;
   late String wifiSSID;
   late bool isOnline;
+  late String keyPath;
 
   late bool dataLoaded = false;
   late bool hadAQI = true;
 
   late int aqi;
 
-  late deviceData sensorData;
+  deviceData? sensorData;
   late StreamSubscription<DatabaseEvent> dataSub;
+  late StreamSubscription<DatabaseEvent> infoSub;
+  late StreamSubscription<DatabaseEvent> chartSub;
 
   late VoidCallback callback; // Notice the variable type
-  
+  bool firstInit = true;
 
   DataResult(
       this.cid,
@@ -41,7 +44,7 @@ class DataResult {
       this.callback);
 
   DataResult.deviceSelect(
-      String c, String n, String m, String v, bool owner, String r, String wifi, var cb) {
+      String c, String n, String m, String v, bool owner, String r, String wifi, String k, var cb) {
     name = n;
     cid = c;
     model = m;
@@ -49,7 +52,10 @@ class DataResult {
     room = r;
     wifiSSID = wifi;
     callback = cb;
+    keyPath = k;
     subscripData();
+    subscripinfo();
+    subscripChart();
   }
 
   int aqi_cal(var imin, var imax, var cmin, var cmax, var cal_data) {
@@ -61,7 +67,7 @@ class DataResult {
 
   int pm2aqi_cal() {
     var tmp_aqi;
-    var dat = sensorData.sensor.pm2_5;
+    var dat = sensorData?.sensor.pm2_5;
     if (dat <= 25) {
       tmp_aqi = aqi_cal(0, 25, 0, 25, dat);
     } else if (dat <= 37) {
@@ -78,7 +84,7 @@ class DataResult {
 
   int pm10aqi_cal() {
     var tmp_aqi;
-    var dat = sensorData.sensor.pm10;
+    var dat = sensorData?.sensor.pm10;
     if (dat <= 50) {
       tmp_aqi = aqi_cal(0, 25, 0, 50, dat);
     } else if (dat <= 80) {
@@ -95,10 +101,10 @@ class DataResult {
 
   calculateAQI() {
     var pm2aqi, pm10aqi;
-    if(sensorData.sensor.pm2_5 != null){
+    if(sensorData?.sensor.pm2_5 != null){
       pm2aqi = pm2aqi_cal();
     }
-    if(sensorData.sensor.pm10 != null){
+    if(sensorData?.sensor.pm10 != null){
       pm10aqi = pm10aqi_cal();
     }
     print('pm2aqi = $pm2aqi');
@@ -149,8 +155,68 @@ class DataResult {
     );
   }
 
+  subscripinfo() async {
+    var _dev = FirebaseDatabase.instance.ref('user/$keyPath');
+    await _dev.get().then((value) {
+      print(value.value);
+    });
+
+    chartSub = _dev.onValue.listen(
+      (DatabaseEvent event) {
+          var values = event.snapshot.value;
+          var map = Map<dynamic, dynamic>.from(event.snapshot.value as dynamic);
+          name = map['name'];
+          model = map['model'];
+          version = map['version'] ?? '0.00';
+          room = map['room'] ?? '';
+          wifiSSID = map['wifi_ssid'] ?? '';
+          callback();
+      },
+      onError: (Object o) {
+        final error = o as FirebaseException;
+      },
+    );
+  }
+
+  subscripChart() async {
+    var _dev = FirebaseDatabase.instance.ref('data/$cid/data');
+    await _dev.get().then((value) {
+      print(value.value);
+    });
+
+    // _dev.onChildAdded.listen((event) { })
+    infoSub = _dev.limitToLast(1).onChildAdded.listen(
+      (DatabaseEvent event) {
+          var values = event.snapshot.value;
+          var map = Map<dynamic, dynamic>.from(event.snapshot.value as dynamic);
+          deviceData tempData = deviceData.fromMapChart(map);
+          if(firstInit){
+            firstInit = false;
+          }else{
+            if(tempData.sensor != null){
+              print(tempData.sensor);
+              chartDataDay.removeAt(0);
+              chartDataDay.add(tempData);
+              callback();
+            }
+          }
+          // name = map['name'];
+          // model = map['model'];
+          // version = map['version'] ?? '0.00';
+          // room = map['room'] ?? '';
+          // wifiSSID = map['wifi_ssid'] ?? '';
+          // callback();
+      },
+      onError: (Object o) {
+        final error = o as FirebaseException;
+      },
+    );
+  }
+
   cancelSub(){
     dataSub.cancel();
+    chartSub.cancel();
+    infoSub.cancel();
   }
 
   Future<bool> getChartDataDay() async {
@@ -183,20 +249,6 @@ class DataResult {
         status = false;
       }
       return status;
-      // if (data.value != null) {
-      //   Map<dynamic, dynamic> values = data.value;
-        // values.forEach((k, v) {
-        //   deviceData tempData = deviceData.fromMapChart(v);
-        //   if(tempData.sensor != null) tmpList.add(tempData);
-        // });
-        // tmpList.sort((a, b) => a.timeStamp.compareTo(b.timeStamp));
-        // chartDataDay = tmpList;
-        // print('map all result data');
-        // status = true;
-      // }else{
-      //   print('chart data null');
-      //   status = false;
-      // }
     });
     return status;
   }

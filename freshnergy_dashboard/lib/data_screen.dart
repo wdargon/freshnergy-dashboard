@@ -39,8 +39,8 @@ class _DataScreenState extends State<DataScreen> {
 
   var mainSizeFactor = 0.96;
   var sensorTitleFactor = 0.10;
-  late StreamController<bool> _sub1;
   var indexChart = 0;
+  late StreamSubscription<DatabaseEvent> subDeviceList;
 
   @override
   void didChangeDependencies() async {
@@ -63,17 +63,89 @@ class _DataScreenState extends State<DataScreen> {
     device2?.cancelSub();
     device3?.cancelSub();
     device4?.cancelSub();
+    subDeviceList.cancel();
+  }
+
+  initNewDevice(){
+    device1?.cancelSub();
+    device2?.cancelSub();
+    device3?.cancelSub();
+    device4?.cancelSub();
+    device1 = null;
+    device2 = null;
+    device3 = null;
+    device4 = null;
   }
 
   initPageData() async {
-    device1 = await getDeviceData('10521C838958');
-    await device1?.getChartDataDay();
-    device2 = await getDeviceData('10521C838870');
-    await device2?.getChartDataDay();
-    device3 = await getDeviceData('246F285EE1FC');
-    await device3?.getChartDataDay();
-    device4 = await getDeviceData('10521C838988');
-    await device4?.getChartDataDay();
+    var subDeviceList = await FirebaseDatabase.instance.ref('dashboard/test').onValue.listen(
+      (DatabaseEvent event) async {
+          var values = event.snapshot.value;
+          List<String> cidList = List<String>.from(event.snapshot.value as dynamic);
+          initNewDevice();
+          if(cidList.isNotEmpty){
+            int i = 1;
+            for (var element in cidList) {
+              if(i <= 4){
+                var st = await getDevice(element, i);
+                if(st){
+                  i++;
+                }
+              }
+            }
+            // device1 = await getDeviceData('10521C838958');
+            // await device1?.getChartDataDay();
+            // device2 = await getDeviceData('10521C838870');
+            // await device2?.getChartDataDay();
+            // device3 = await getDeviceData('246F285EE1FC');
+            // await device3?.getChartDataDay();
+            // device4 = await getDeviceData('10521C838988');
+            // await device4?.getChartDataDay();
+          }
+      },
+      onError: (Object o) {
+        final error = o as FirebaseException;
+      },
+    );
+    // if(event.value != null){
+    //   List<String> cidList = List<String>.from(event.value as dynamic);
+    //   if(cidList.isNotEmpty){
+    //     int i = 0;
+    //     device1 = await getDeviceData('10521C838958');
+    //     await device1?.getChartDataDay();
+    //     device2 = await getDeviceData('10521C838870');
+    //     await device2?.getChartDataDay();
+    //     device3 = await getDeviceData('246F285EE1FC');
+    //     await device3?.getChartDataDay();
+    //     device4 = await getDeviceData('10521C838988');
+    //     await device4?.getChartDataDay();
+    //   }
+    // }
+  }
+
+  Future<bool> getDevice(String cid, int ind) async {
+    var tmpDevice = await getDeviceData(cid);
+    var stat = true;
+    if(tmpDevice!=null){
+      switch(ind){
+        case 1: device1 = tmpDevice;
+        await device1?.getChartDataDay();
+        break;
+        case 2: device2 = tmpDevice;
+        await device2?.getChartDataDay();
+        break;
+        case 3: device3 = tmpDevice;
+        await device3?.getChartDataDay();
+        break;
+        case 4: device4 = tmpDevice;
+        await device4?.getChartDataDay();
+        break;
+        default:stat=false;break;
+      }
+    }else{
+      stat=false;
+    }
+    return stat;
   }
 
   Future<DataResult?> getDeviceData(String cid) async {
@@ -86,6 +158,7 @@ class _DataScreenState extends State<DataScreen> {
       var mapSnap = Map<dynamic, dynamic>.from(event.snapshot.value as dynamic);
       var map =
           Map<dynamic, dynamic>.from(mapSnap.entries.first.value as dynamic);
+      print(mapSnap.entries.first.key);
       return DataResult.deviceSelect(
           cid,
           map['name'],
@@ -94,6 +167,7 @@ class _DataScreenState extends State<DataScreen> {
           true,
           map['room'] ?? '',
           map['wifi_ssid'] ?? '',
+          mapSnap.entries.first.key,
           refreshScreen);
     } else {
       return null;
@@ -248,21 +322,22 @@ class _DataScreenState extends State<DataScreen> {
             return co2_chart(width, height, ts, tsTime);
           case CHART_PM:
             return pm_chart(width, height, ts, tsTime);
-          default : return Container();
+          default:
+            return Container();
         }
       },
     );
   }
 
-  Widget showTempHumiChart(){
+  Widget showTempHumiChart() {
     return SizedBox(
       child: Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: getChart(CHART_TEMP)),
-              Expanded(child: getChart(CHART_HUMI)),
-            ],
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: getChart(CHART_TEMP)),
+          Expanded(child: getChart(CHART_HUMI)),
+        ],
       ),
     );
   }
@@ -336,7 +411,7 @@ class _DataScreenState extends State<DataScreen> {
       alignment: Alignment.topRight,
       child: Container(
         height: h * sensorTitleFactor,
-        width: w * 0.02,
+        width: w * 0.04,
         color: c,
       ),
     );
@@ -666,7 +741,9 @@ class _DataScreenState extends State<DataScreen> {
               ? Stack(
                   children: [
                     colorIndicator(c, height, width),
-                    showDeviceInfo(data.sensorData, height, width),
+                    data.sensorData != null
+                        ? showDeviceInfo(data.sensorData!, height, width)
+                        : Container(),
                   ],
                 )
               : Center(
@@ -685,6 +762,10 @@ class _DataScreenState extends State<DataScreen> {
       builder: (context, constraints) {
         final width = constraints.biggest.width;
         final height = constraints.biggest.height;
+        var ts = TextStyle(
+          fontSize: height / 16,
+          color: textColor,
+        );
         return Container(
           height: height,
           width: width,
@@ -696,12 +777,21 @@ class _DataScreenState extends State<DataScreen> {
                 color: cardColor,
                 // borderRadius: BorderRadius.all(Radius.circular(height * 0.1)),
               ),
-              child: c,
+              child: checkZeroDevice()? c : Center(
+                  child: Text(
+                    "No device",
+                    style: ts,
+                  ),
+                ),
             ),
           ),
         );
       },
     );
+  }
+
+  bool checkZeroDevice(){
+    return device1!=null || device2!=null || device3!=null || device4!=null;
   }
 
   @override
