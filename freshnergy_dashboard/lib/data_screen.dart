@@ -37,7 +37,8 @@ class _DataScreenState extends State<DataScreen> {
   DataResult? device3;
   DataResult? device4;
 
-  var mainSizeFactor = 0.96;
+  final mainPaddingSize = 0.04;
+  var paddingSize = 0.0;
   var sensorTitleFactor = 0.10;
   var indexChart = 0;
   late StreamSubscription<DatabaseEvent> subDeviceList;
@@ -66,7 +67,7 @@ class _DataScreenState extends State<DataScreen> {
     subDeviceList.cancel();
   }
 
-  initNewDevice(){
+  initNewDevice() {
     device1?.cancelSub();
     device2?.cancelSub();
     device3?.cancelSub();
@@ -78,72 +79,58 @@ class _DataScreenState extends State<DataScreen> {
   }
 
   initPageData() async {
-    var subDeviceList = await FirebaseDatabase.instance.ref('dashboard/test').onValue.listen(
+    var subDeviceList =
+        await FirebaseDatabase.instance.ref('dashboard/test').onValue.listen(
       (DatabaseEvent event) async {
-          var values = event.snapshot.value;
-          List<String> cidList = List<String>.from(event.snapshot.value as dynamic);
-          initNewDevice();
-          if(cidList.isNotEmpty){
-            int i = 1;
-            for (var element in cidList) {
-              if(i <= 4){
-                var st = await getDevice(element, i);
-                if(st){
-                  i++;
-                }
+        var values = event.snapshot.value;
+        List<String> cidList =
+            List<String>.from(event.snapshot.value as dynamic);
+        initNewDevice();
+        if (cidList.isNotEmpty) {
+          int i = 1;
+          for (var element in cidList) {
+            if (i <= 4) {
+              var st = await getDevice(element, i);
+              if (st) {
+                i++;
               }
             }
-            // device1 = await getDeviceData('10521C838958');
-            // await device1?.getChartDataDay();
-            // device2 = await getDeviceData('10521C838870');
-            // await device2?.getChartDataDay();
-            // device3 = await getDeviceData('246F285EE1FC');
-            // await device3?.getChartDataDay();
-            // device4 = await getDeviceData('10521C838988');
-            // await device4?.getChartDataDay();
           }
+        }
       },
       onError: (Object o) {
         final error = o as FirebaseException;
       },
     );
-    // if(event.value != null){
-    //   List<String> cidList = List<String>.from(event.value as dynamic);
-    //   if(cidList.isNotEmpty){
-    //     int i = 0;
-    //     device1 = await getDeviceData('10521C838958');
-    //     await device1?.getChartDataDay();
-    //     device2 = await getDeviceData('10521C838870');
-    //     await device2?.getChartDataDay();
-    //     device3 = await getDeviceData('246F285EE1FC');
-    //     await device3?.getChartDataDay();
-    //     device4 = await getDeviceData('10521C838988');
-    //     await device4?.getChartDataDay();
-    //   }
-    // }
   }
 
   Future<bool> getDevice(String cid, int ind) async {
     var tmpDevice = await getDeviceData(cid);
     var stat = true;
-    if(tmpDevice!=null){
-      switch(ind){
-        case 1: device1 = tmpDevice;
-        await device1?.getChartDataDay();
-        break;
-        case 2: device2 = tmpDevice;
-        await device2?.getChartDataDay();
-        break;
-        case 3: device3 = tmpDevice;
-        await device3?.getChartDataDay();
-        break;
-        case 4: device4 = tmpDevice;
-        await device4?.getChartDataDay();
-        break;
-        default:stat=false;break;
+    if (tmpDevice != null) {
+      switch (ind) {
+        case 1:
+          device1 = tmpDevice;
+          await device1?.getChartDataDay();
+          break;
+        case 2:
+          device2 = tmpDevice;
+          await device2?.getChartDataDay();
+          break;
+        case 3:
+          device3 = tmpDevice;
+          await device3?.getChartDataDay();
+          break;
+        case 4:
+          device4 = tmpDevice;
+          await device4?.getChartDataDay();
+          break;
+        default:
+          stat = false;
+          break;
       }
-    }else{
-      stat=false;
+    } else {
+      stat = false;
     }
     return stat;
   }
@@ -329,19 +316,6 @@ class _DataScreenState extends State<DataScreen> {
     );
   }
 
-  Widget showTempHumiChart() {
-    return SizedBox(
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: getChart(CHART_TEMP)),
-          Expanded(child: getChart(CHART_HUMI)),
-        ],
-      ),
-    );
-  }
-
   Widget chartShow(var w, var h, var header, var chartData, var isLegend,
       var tsTitle, var tsTime) {
     return Container(
@@ -388,6 +362,7 @@ class _DataScreenState extends State<DataScreen> {
           dateFormat: indexChart == 0 ? DateFormat.H() : DateFormat.d(),
         ),
         primaryYAxis: NumericAxis(
+          // maximumLabels: 100,
           majorGridLines: const MajorGridLines(
             width: 1,
             color: Colors.white,
@@ -477,6 +452,10 @@ class _DataScreenState extends State<DataScreen> {
   Widget gaugeTemp(
       deviceData dev, var h, var w, var styleTitle, var styleValue) {
     var gaugeWidth = h / 70;
+    var isShow = true;
+    if(dev.sensor.temp == null){
+      isShow = false;
+    }
     var gauge = SfRadialGauge(
       axes: <RadialAxis>[
         RadialAxis(
@@ -518,12 +497,16 @@ class _DataScreenState extends State<DataScreen> {
       ],
     );
     return gaugeShow(dev, h, w, styleTitle, styleValue, gauge,
-        "${loc.main.temperature}", "${dev.sensor.temp.toStringAsFixed(0)}°C");
+        "${loc.main.temperature}", "${dev.sensor.temp.toStringAsFixed(0)}°C", isShow);
   }
 
   Widget gaugeHumi(
       deviceData dev, var h, var w, var styleTitle, var styleValue) {
     var gaugeWidth = h / 70;
+    var isShow = true;
+    if(dev.sensor.humi == null){
+      isShow = false;
+    }
     var gauge = SfRadialGauge(
       axes: <RadialAxis>[
         RadialAxis(
@@ -565,11 +548,15 @@ class _DataScreenState extends State<DataScreen> {
       ],
     );
     return gaugeShow(dev, h, w, styleTitle, styleValue, gauge,
-        "${loc.main.humi}", "${dev.sensor.humi.toStringAsFixed(0)}%");
+        "${loc.main.humi}", "${dev.sensor.humi.toStringAsFixed(0)}%", isShow);
   }
 
   Widget gaugePm(deviceData dev, var h, var w, var styleTitle, var styleValue) {
     var gaugeWidth = h / 70;
+    var isShow = true;
+    if(dev.sensor.pm2_5 == null){
+      isShow = false;
+    }
     var gauge = SfRadialGauge(
       axes: <RadialAxis>[
         RadialAxis(
@@ -623,12 +610,16 @@ class _DataScreenState extends State<DataScreen> {
       ],
     );
     return gaugeShow(dev, h, w, styleTitle, styleValue, gauge, PM_String,
-        "${dev.sensor.pm2_5} ug/m³");
+        "${dev.sensor.pm2_5} ug/m³", isShow);
   }
 
   Widget gaugeCo2(
       deviceData dev, var h, var w, var styleTitle, var styleValue) {
     var gaugeWidth = h / 70;
+    var isShow = true;
+    if(dev.sensor.co2 == null || dev.sensor.co2 == 0){
+      isShow = false;
+    }
     var gauge = SfRadialGauge(
       axes: <RadialAxis>[
         RadialAxis(
@@ -676,16 +667,16 @@ class _DataScreenState extends State<DataScreen> {
       ],
     );
     return gaugeShow(dev, h, w, styleTitle, styleValue, gauge, CO2_String,
-        "${dev.sensor.co2} PPM");
+        "${dev.sensor.co2} PPM", isShow);
   }
 
   Widget gaugeShow(deviceData dev, var h, var w, var styleTitle, var styleValue,
-      var gauge, var title, var value) {
+      var gauge, var title, var value, bool isShow) {
     return Center(
       child: Container(
         padding: EdgeInsets.only(
             top: h / 80, bottom: h / 80, left: h / 80, right: h / 40),
-        child: Row(
+        child: isShow?Row(
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -721,7 +712,7 @@ class _DataScreenState extends State<DataScreen> {
               ),
             ),
           ],
-        ),
+        ):Container(),
       ),
     );
   }
@@ -767,22 +758,86 @@ class _DataScreenState extends State<DataScreen> {
           color: textColor,
         );
         return Container(
+          padding: EdgeInsets.only(
+              top: paddingSize / 2,
+              right: paddingSize / 2),
           height: height,
           width: width,
-          child: Center(
-            child: Container(
-              height: height * mainSizeFactor,
-              width: width * mainSizeFactor,
-              decoration: BoxDecoration(
-                color: cardColor,
-                // borderRadius: BorderRadius.all(Radius.circular(height * 0.1)),
-              ),
-              child: checkZeroDevice()? c : Center(
-                  child: Text(
-                    "No device",
-                    style: ts,
+          child: Container(
+            decoration: BoxDecoration(
+              color: cardColor,
+              // borderRadius: BorderRadius.all(Radius.circular(height * 0.1)),
+            ),
+            child: checkZeroDevice()
+                ? c
+                : Center(
+                    child: Text(
+                      "No device",
+                      style: ts,
+                    ),
                   ),
-                ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget showTempHumiChart() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.biggest.width;
+        final h = constraints.biggest.height;
+        final height = h / 2;
+        var ts = TextStyle(
+          fontSize: height / 16,
+          color: textColor,
+        );
+        return Container(
+          padding: EdgeInsets.only(left: paddingSize/2),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                    child: Container(
+                  color: cardColor,
+                  child: checkZeroDevice()
+                      ? getChart(CHART_TEMP)
+                      : Center(
+                          child: Text(
+                            "No device",
+                            style: ts,
+                          ),
+                        ),
+                )),
+                SizedBox(height: paddingSize),
+                Expanded(
+                    child: Container(
+                  color: cardColor,
+                  child: checkZeroDevice()
+                      ? getChart(CHART_HUMI)
+                      : Center(
+                          child: Text(
+                            "No device",
+                            style: ts,
+                          ),
+                        ),
+                )),
+                SizedBox(height: paddingSize),
+                Expanded(
+                    child: Container(
+                  color: cardColor,
+                  child: checkZeroDevice()
+                      ? getChart(CHART_PM)
+                      : Center(
+                          child: Text(
+                            "No device",
+                            style: ts,
+                          ),
+                        ),
+                )),
+              ],
             ),
           ),
         );
@@ -790,14 +845,18 @@ class _DataScreenState extends State<DataScreen> {
     );
   }
 
-  bool checkZeroDevice(){
-    return device1!=null || device2!=null || device3!=null || device4!=null;
+  bool checkZeroDevice() {
+    return device1 != null ||
+        device2 != null ||
+        device3 != null ||
+        device4 != null;
   }
 
   @override
   Widget build(BuildContext context) {
     var abh = AppBar().preferredSize.height;
     var h = MediaQuery.of(context).size.height;
+    paddingSize = ((h - abh) * mainPaddingSize) / 2;
     return Scaffold(
       appBar: AppBar(
         title: Image.asset(
@@ -810,14 +869,14 @@ class _DataScreenState extends State<DataScreen> {
         actions: [getPopup()],
       ),
       body: Container(
-        padding: EdgeInsets.all(h * 0.01),
+        padding: EdgeInsets.all(paddingSize),
         color: bgColor,
-        child: Column(
+        child: Row(
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: Row(
+              child: Column(
                 mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -826,42 +885,30 @@ class _DataScreenState extends State<DataScreen> {
                       builder: (context, constraints) {
                         final sw = constraints.biggest.width;
                         final sh = constraints.biggest.height;
-                        return Center(
-                          child: Container(
-                            height: sh * mainSizeFactor,
-                            width: sw * mainSizeFactor,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(child: sensorShow(device1, dev1Color)),
-                                SizedBox(width: sw - (sw * mainSizeFactor)),
-                                Expanded(child: sensorShow(device2, dev2Color)),
-                                SizedBox(width: sw - (sw * mainSizeFactor)),
-                                Expanded(child: sensorShow(device3, dev3Color)),
-                                SizedBox(width: sw - (sw * mainSizeFactor)),
-                                Expanded(child: sensorShow(device4, dev4Color)),
-                              ],
-                            ),
+                        return Container(
+                          padding: EdgeInsets.only(bottom: paddingSize / 2, right: paddingSize/2),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.max,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(child: sensorShow(device1, dev1Color)),
+                              SizedBox(width: paddingSize),
+                              Expanded(child: sensorShow(device2, dev2Color)),
+                              SizedBox(width: paddingSize),
+                              Expanded(child: sensorShow(device3, dev3Color)),
+                              SizedBox(width: paddingSize),
+                              Expanded(child: sensorShow(device4, dev4Color)),
+                            ],
                           ),
                         );
                       },
                     ),
                   ),
-                  Expanded(child: cardWidget(showTempHumiChart())),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
                   Expanded(child: cardWidget(getChart(CHART_CO2))),
-                  Expanded(child: cardWidget(getChart(CHART_PM))),
                 ],
               ),
             ),
+            Expanded(child: showTempHumiChart()),
           ],
         ),
       ),

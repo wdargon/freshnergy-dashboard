@@ -117,11 +117,6 @@ class DataResult {
     }
   }
 
-  updateSensorData(var _data) async {
-    sensorData = deviceData.fromMap(_data);
-    calculateAQI();
-  }
-
   subscripData() async {
     var _dev = FirebaseDatabase.instance.ref('data/$cid/realtime');
     await _dev.get().then((value) {
@@ -142,6 +137,7 @@ class DataResult {
           tmpDev.deviceName = name;
           tmpDev.version = version.toString();
           sensorData = tmpDev;
+          calculateAQI();
           callback();
           // print(dev!.sensor.temp);
         // });

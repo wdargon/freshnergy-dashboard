@@ -131,37 +131,49 @@ class deviceData {
 }
 
 class sensorData {
-  late double temp;
-  late double humi;
-  late int pm1;
-  late int pm2_5;
-  late int pm4;
-  late int pm10;
-  late int? co2;
-  late int? eco2;
-  late double? tvoc;
+  double? temp;
+  double? humi;
+  int? pm1;
+  int? pm2_5;
+  int? pm4;
+  int? pm10;
+  int? co2;
+  int? eco2;
+  double? tvoc;
 
   sensorData(this.temp, this.humi, this.pm1, this.pm2_5, this.pm4, this.pm10,
       this.co2);
 
   sensorData.fromMap(Map<dynamic, dynamic> map) {
     if (map['temp'] != null) {
-      temp = checkRange(max: 100, min: 0, data: map['temp'].toDouble());
+      temp = checkRange(max: 99, min: 0, data: map['temp'].toDouble());
+    }else{
+      temp = null;
     }
     if (map['humi'] != null) {
-      humi = checkRange(max: 100, min: 0, data: map['humi'].toDouble());
+      humi = checkRange(max: 99, min: 0, data: map['humi'].toDouble());
+    }else{
+      humi = null;
     }
     if (map['pm1'] != null) {
       pm1 = checkRangeInt(data: map['pm1'].toInt(), max: maxPM, min: minPM);
+    }else{
+      pm1 = null;
     }
     if (map['pm2_5'] != null) {
       pm2_5 = checkRangeInt(data: map['pm2_5'].toInt(), max: maxPM, min: minPM);
+    }else{
+      pm2_5 = null;
     }
     if (map['pm4'] != null) {
       pm4 = checkRangeInt(data: map['pm4'].toInt(), max: maxPM, min: minPM);
+    }else{
+      pm4 = null;
     }
     if (map['pm10'] != null) {
       pm10 = checkRangeInt(data: map['pm10'].toInt(), max: maxPM, min: minPM);
+    }else{
+      pm10 = null;
     }
     if (map['co2'] != null) {
       co2 = checkRangeInt(data: map['co2'].toInt(), max: maxCo2, min: minCo2);
