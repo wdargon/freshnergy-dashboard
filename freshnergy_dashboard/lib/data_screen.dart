@@ -236,74 +236,166 @@ class _DataScreenState extends State<DataScreen> {
 
   Widget co2_chart(var width, var height, var ts, var tsTime) {
     var cData = List<ChartSeries>.empty(growable: true);
+    double? maxData;
     if (device1 != null) {
+      var contain = device1!.chartDataDay.where((element) => element.sensor.co2 >= maxCo2*5/6);
+      if(contain.isNotEmpty){
+        maxData = maxCo2.toDouble();
+      }
       cData.add(getChartDataCo2(device1!, dev1Color));
     }
     if (device2 != null) {
+      if(maxData==null){
+        var contain = device2!.chartDataDay.where((element) => element.sensor.co2 >= maxCo2*5/6);
+        if(contain.isNotEmpty){
+          maxData = maxCo2.toDouble();
+        }
+      }
       cData.add(getChartDataCo2(device2!, dev2Color));
     }
     if (device3 != null) {
+      if(maxData==null){
+        var contain = device3!.chartDataDay.where((element) => element.sensor.co2 >= maxCo2*5/6);
+        if(contain.isNotEmpty){
+          maxData = maxCo2.toDouble();
+        }
+      }
       cData.add(getChartDataCo2(device3!, dev3Color));
     }
     if (device4 != null) {
+      if(maxData==null){
+        var contain = device4!.chartDataDay.where((element) => element.sensor.co2 >= maxCo2*5/6);
+        if(contain.isNotEmpty){
+          maxData = maxCo2.toDouble();
+        }
+      }
       cData.add(getChartDataCo2(device4!, dev4Color));
     }
     return chartShow(
-        width, height, '$CO2_String (PPM)', cData, false, ts, tsTime);
+        width, height, '$CO2_String (PPM)', cData, false, ts, tsTime, maxData);
   }
 
   Widget temp_chart(var width, var height, var ts, var tsTime) {
     var cData = List<ChartSeries>.empty(growable: true);
+    double? maxData;
     if (device1 != null) {
+      var contain = device1!.chartDataDay.where((element) => element.sensor.temp >= 100*5/6);
+      if(contain.isNotEmpty){
+        maxData = 100.0;
+      }
       cData.add(getChartDataTemp(device1!, dev1Color));
     }
     if (device2 != null) {
+      if(maxData==null){
+        var contain = device2!.chartDataDay.where((element) => element.sensor.temp >= 100*5/6);
+        if(contain.isNotEmpty){
+          maxData = 100.0;
+        }
+      }
       cData.add(getChartDataTemp(device2!, dev2Color));
     }
     if (device3 != null) {
+      if(maxData==null){
+        var contain = device3!.chartDataDay.where((element) => element.sensor.temp >= 100*5/6);
+        if(contain.isNotEmpty){
+          maxData = 100.0;
+        }
+      }
       cData.add(getChartDataTemp(device3!, dev3Color));
     }
     if (device4 != null) {
+      if(maxData==null){
+        var contain = device4!.chartDataDay.where((element) => element.sensor.temp >= 100*5/6);
+        if(contain.isNotEmpty){
+          maxData = 100.0;
+        }
+      }
       cData.add(getChartDataTemp(device4!, dev4Color));
     }
     return chartShow(width, height, '${loc.main.temperature} (°C)', cData,
-        false, ts, tsTime);
+        false, ts, tsTime, 100.toDouble());
   }
 
   Widget humi_chart(var width, var height, var ts, var tsTime) {
     var cData = List<ChartSeries>.empty(growable: true);
+    double? maxData;
     if (device1 != null) {
+        var contain = device1!.chartDataDay.where((element) => element.sensor.humi >= 100*5/6);
+        if(contain.isNotEmpty){
+          maxData = 100.0;
+        }
       cData.add(getChartDataHumi(device1!, dev1Color));
     }
     if (device2 != null) {
+      if(maxData==null){
+        var contain = device2!.chartDataDay.where((element) => element.sensor.humi >= 100*5/6);
+        if(contain.isNotEmpty){
+          maxData = 100.0;
+        }
+      }
       cData.add(getChartDataHumi(device2!, dev2Color));
     }
     if (device3 != null) {
+      if(maxData==null){
+        var contain = device3!.chartDataDay.where((element) => element.sensor.humi >= 100*5/6);
+        if(contain.isNotEmpty){
+          maxData = 100.0;
+        }
+      }
       cData.add(getChartDataHumi(device3!, dev3Color));
     }
     if (device4 != null) {
+      if(maxData==null){
+        var contain = device4!.chartDataDay.where((element) => element.sensor.humi >= 100*5/6);
+        if(contain.isNotEmpty){
+          maxData = 100.0;
+        }
+      }
       cData.add(getChartDataHumi(device4!, dev4Color));
     }
     return chartShow(
-        width, height, '${loc.main.humi} (%)', cData, false, ts, tsTime);
+        width, height, '${loc.main.humi} (%)', cData, false, ts, tsTime, 100.toDouble());
   }
 
   Widget pm_chart(var width, var height, var ts, var tsTime) {
     var cData = List<ChartSeries>.empty(growable: true);
+    double? maxData;
     if (device1 != null) {
-      cData.add(getChartDataHumi(device1!, dev1Color));
+        var contain = device1!.chartDataDay.where((element) => element.sensor.humi >= maxPM*5/6);
+        if(contain.isNotEmpty){
+          maxData = maxPM.toDouble();
+        }
+      cData.add(getChartDataPM(device1!, dev1Color));
     }
     if (device2 != null) {
-      cData.add(getChartDataHumi(device2!, dev2Color));
+      if(maxData==null){
+        var contain = device2!.chartDataDay.where((element) => element.sensor.humi >= maxPM*5/6);
+        if(contain.isNotEmpty){
+          maxData = maxPM.toDouble();
+        }
+      }
+      cData.add(getChartDataPM(device2!, dev2Color));
     }
     if (device3 != null) {
-      cData.add(getChartDataHumi(device3!, dev3Color));
+      if(maxData==null){
+        var contain = device3!.chartDataDay.where((element) => element.sensor.humi >= maxPM*5/6);
+        if(contain.isNotEmpty){
+          maxData = maxPM.toDouble();
+        }
+      }
+      cData.add(getChartDataPM(device3!, dev3Color));
     }
     if (device4 != null) {
-      cData.add(getChartDataHumi(device4!, dev4Color));
+      if(maxData==null){
+        var contain = device4!.chartDataDay.where((element) => element.sensor.humi >= maxPM*5/6);
+        if(contain.isNotEmpty){
+          maxData = maxPM.toDouble();
+        }
+      }
+      cData.add(getChartDataPM(device4!, dev4Color));
     }
     return chartShow(
-        width, height, '$PM_String (ug/m³)', cData, false, ts, tsTime);
+        width, height, '$PM_String (ug/m³)', cData, false, ts, tsTime, maxPM.toDouble());
   }
 
   Widget getChart(String type) {
@@ -338,7 +430,7 @@ class _DataScreenState extends State<DataScreen> {
   }
 
   Widget chartShow(var w, var h, var header, var chartData, var isLegend,
-      var tsTitle, var tsTime) {
+      var tsTitle, var tsTime, double? maxData) {
     return Container(
       height: h,
       width: w,
@@ -383,7 +475,7 @@ class _DataScreenState extends State<DataScreen> {
           dateFormat: indexChart == 0 ? DateFormat.H() : DateFormat.d(),
         ),
         primaryYAxis: NumericAxis(
-          // maximumLabels: 100,
+          maximum: maxData,
           majorGridLines: const MajorGridLines(
             width: 1,
             color: Colors.white,
