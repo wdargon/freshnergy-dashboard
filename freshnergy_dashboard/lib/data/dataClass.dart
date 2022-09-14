@@ -87,7 +87,12 @@ class deviceData {
 
     var hr = timeStamp % 3600000;
     timeStamp = timeStamp - hr;
-    dateTime = DateTime.fromMillisecondsSinceEpoch(timeStamp, isUtc: false);
+    var tmpDT = DateTime.fromMillisecondsSinceEpoch(timeStamp, isUtc: false);
+    dateTime = tmpDT.toLocal();
+    print(dateTime.hour);
+    var tdt = DateTime.now();
+    print(tdt.hour);
+    // dateTime = DateTime.fromMillisecondsSinceEpoch(timeStamp, isUtc: true).toLocal();
     // print(dateTime.hour);
   }
 

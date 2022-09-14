@@ -42,6 +42,8 @@ class MyApp extends StatelessWidget {
     return GlobalLoaderOverlay(
       child: MaterialApp(
           debugShowCheckedModeBanner: false,
+          debugShowMaterialGrid: false,
+          showSemanticsDebugger: false,
           localizationsDelegates: const [
             // ... app-specific localization delegate[s] here
             LocDelegate(),
