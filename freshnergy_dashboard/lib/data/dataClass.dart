@@ -89,9 +89,6 @@ class deviceData {
     timeStamp = timeStamp - hr;
     var tmpDT = DateTime.fromMillisecondsSinceEpoch(timeStamp, isUtc: false);
     dateTime = tmpDT.toLocal();
-    print(dateTime.hour);
-    var tdt = DateTime.now();
-    print(tdt.hour);
     // dateTime = DateTime.fromMillisecondsSinceEpoch(timeStamp, isUtc: true).toLocal();
     // print(dateTime.hour);
   }

@@ -191,7 +191,16 @@ class DataResult {
           }else{
             if(tempData.sensor != null){
               print(tempData.sensor);
-              chartDataDay.removeAt(0);
+              var timeNow = DateTime.now();
+              var hrNow = timeNow.hour;
+              var dayNow = timeNow.day;
+              if(chartDataDay[0].dateTime.day < dayNow-1){
+                  chartDataDay.removeAt(0);
+              }else if(chartDataDay[0].dateTime.day == dayNow-1){
+                if(hrNow >= chartDataDay[0].dateTime.hour){
+                  chartDataDay.removeAt(0);
+                }
+              }
               chartDataDay.add(tempData);
               callback();
             }
@@ -213,6 +222,36 @@ class DataResult {
     dataSub.cancel();
     chartSub.cancel();
     infoSub.cancel();
+  }
+
+  proofChart(){
+    var dt24hr = DateTime.now().add(const Duration(days: -1));
+    var dataSize = chartDataDay.length;
+    int? lastIndexDelete;
+    for(var i=0;i<dataSize;i++){
+      var st = chartDataDay[i].dateTime.isBefore(dt24hr);
+      if(st){
+        lastIndexDelete=i;
+      }
+    }
+    if(lastIndexDelete!=null){
+      chartDataDay.removeRange(0, lastIndexDelete+1);
+    }
+  }
+
+  checkOnline(){
+    int time = DateTime.now().millisecondsSinceEpoch;
+    // status = false;
+    if(sensorData != null){
+      if (time - sensorData!.timeStamp > 16 * 60 * 1000) {
+        sensorData!.status = false;
+      } else {
+        sensorData!.status = true;
+      }
+    }
+      if(sensorData!=null && !sensorData!.status){
+        proofChart();
+      }
   }
 
   Future<bool> getChartDataDay() async {

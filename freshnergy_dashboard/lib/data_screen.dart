@@ -42,6 +42,7 @@ class _DataScreenState extends State<DataScreen> {
   var sensorTitleFactor = 0.10;
   var indexChart = 0;
   late StreamSubscription<DatabaseEvent> subDeviceList;
+  late Timer chartCheckTimer;
 
   @override
   void didChangeDependencies() async {
@@ -55,6 +56,25 @@ class _DataScreenState extends State<DataScreen> {
     // TODO: implement initState
     super.initState();
     initPageData();
+    chartCheckTimer = Timer.periodic(const Duration(minutes: 30), (timer) { 
+      recheckDevice();
+    });
+  }
+
+  recheckDevice(){
+    if(device1!=null){
+      device1!.checkOnline();
+    }
+    if(device2!=null){
+      device2!.checkOnline();
+    }
+    if(device3!=null){
+      device3!.checkOnline();
+    }
+    if(device4!=null){
+      device4!.checkOnline();
+    }
+    refreshScreen();
   }
 
   @override
@@ -65,6 +85,7 @@ class _DataScreenState extends State<DataScreen> {
     device3?.cancelSub();
     device4?.cancelSub();
     subDeviceList.cancel();
+    chartCheckTimer.cancel();
   }
 
   initNewDevice() {
